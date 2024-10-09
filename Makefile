@@ -2,7 +2,6 @@ CC = gcc
 CFLAGS = -DLOG_USE_COLOR
 CFLAGS += -O3
 CFLAGS += -std=gnu99
-CFLAGS += -c
 
 VPATH = log:network:util
 
@@ -10,14 +9,16 @@ ifeq ($(DEBUG), 1)
 CFLAGS += -g
 endif
 
-main: main.c lib.a
-	$(CC) $(CFLAGS) main.c -o main
+main: main.c libslp.a
+	$(CC) $(CFLAGS) $< -L. -lslp -o main
 
-lib.a: log.o network.o packets.o thread_pool.o types.o
+libslp.a: log.o network.o packets.o thread_pool.o types.o
 	ar rcs $@ $^
 
-.PHONY: clean
+.PHONY: clean run
 clean:
 	@for file in $$(ls *.o); do rm $$file; done
-	if [ -e lib.a ]; then rm lib.a; fi
+	if [ -e libslp.a ]; then rm libslp.a; fi
 	if [ -e main ]; then rm main; fi
+run: main
+	./main
