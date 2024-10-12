@@ -42,7 +42,7 @@ int network_accept(int sd, struct sockaddr_in *client_addr, socklen_t *addrlen){
     
     if((client_sd = accept(sd, (struct sockaddr*)client_addr, addrlen)) < 0){
         log_error(LOG_USE_FILE_LINE, "Failed to accept connection: %s", strerror(errno));
-        return -1;
+        return client_sd;
     }
     return client_sd;
 }
