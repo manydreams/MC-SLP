@@ -16,8 +16,8 @@ you can only use -O0 to compile this file with gcc
 #define LIM_MAX_THRD 30000
 
 struct __thread_pool_t{
-    thrd_pool_work_t *work_head;
-    thrd_pool_work_t *work_end;
+    thrdpool_work_t *work_head;
+    thrdpool_work_t *work_end;
 
     pthread_t *tid;
     pthread_t tadmin;
@@ -48,16 +48,11 @@ long __get_cur_ms(){
 void *__create_thread(void *arg){
     long tm, wait_tm = 0, timeout = 10;
     pthread_t tid = pthread_self();
-    
-    
-    #ifdef DEBUG
-    log_debug(LOG_USE_FILE_LINE, "Thread %u start", tid);
-    #endif //DEBUG
 
     //get thread arg
-    thrd_pool_t *tpool = (thrd_pool_t*)arg;
+    thrdpool_t *tpool = (thrdpool_t*)arg;
 
-    thrd_pool_work_t *work = NULL;
+    thrdpool_work_t *work = NULL;
 
     while(1){
 
@@ -71,24 +66,14 @@ void *__create_thread(void *arg){
 
         //if exit, exit thread
         if(tpool->exit){
-        #ifdef DEBUG
-            log_debug(LOG_USE_FILE_LINE, "Thread %u exit", tid);
-        #endif //DEBUG
             break;
         }
         //if no work, exit thread
         if(wait_tm >= timeout){
-        #ifdef DEBUG
-            log_debug(LOG_USE_FILE_LINE, "Thread %u wait timeout", tid);
-            log_debug(LOG_USE_FILE_LINE, "wait_tm: %lu, tm: %lu, now: %lu", wait_tm, tm, __get_cur_ms());
-        #endif //DEBUG
             break;
         }
 
         //get work
-    #ifdef DEBUG
-        clock_t start_tm = clock(); //start time
-    #endif
         pthread_mutex_lock(&tpool->lock);
         if(!tpool->work_count){
             pthread_mutex_unlock(&tpool->lock);
@@ -99,13 +84,6 @@ void *__create_thread(void *arg){
         tpool->work_count--;
 
         pthread_mutex_unlock(&tpool->lock);
-
-    #ifdef DEBUG
-        clock_t end_tm = clock(); //end time
-        //calc time
-        double time_used = (double)(end_tm - start_tm) / CLOCKS_PER_SEC;
-        log_debug(LOG_USE_FILE_LINE, "Thread %u get work time: %f", tid, time_used);
-    #endif //DEBUG
 
         //run work
         work->func(work->arg);
@@ -133,9 +111,6 @@ void *__create_thread(void *arg){
     tpool->busy_thrd--;
     pthread_mutex_unlock(&tpool->lock);
 
-#ifdef DEBUG
-    log_debug(LOG_USE_FILE_LINE, "Thread %u exit\n\n", tid);
-#endif //DEBUG
     //exit thread
     pthread_exit(NULL);
 }
@@ -143,7 +118,7 @@ void *__create_thread(void *arg){
 void *__admin_thread(void *arg){
 
     //get thread pool
-    thrd_pool_t *tpool = (thrd_pool_t*)arg;
+    thrdpool_t *tpool = (thrdpool_t*)arg;
     int work_thrd;
 
     while(1){
@@ -156,12 +131,9 @@ void *__admin_thread(void *arg){
         }
 
         //create new thread if work count is more than busy threads
-        if(tpool->work_count > tpool->busy_thrd*2 &&
-         tpool->busy_thrd < tpool->max_thrd){
-
-        #ifdef DEBUG    
-            clock_t start_tm = clock(); //start time
-        #endif //DEBUG
+        if(tpool->work_count >= tpool->busy_thrd &&
+           tpool->work_count > 0 &&
+           tpool->busy_thrd < tpool->max_thrd){
 
             if(pthread_create(&tpool->tid[work_thrd], &tpool->attr, __create_thread, (void*)tpool)){
                 log_error(LOG_USE_FILE_LINE, "Can't create thread: Caller=>%p", __builtin_return_address(0));
@@ -174,14 +146,6 @@ void *__admin_thread(void *arg){
             tpool->busy_thrd++;
             pthread_mutex_unlock(&tpool->lock);
 
-        #ifdef DEBUG    
-            clock_t end_tm = clock(); //end time
-
-            //calc time
-            double time_used = (double)(end_tm - start_tm) / CLOCKS_PER_SEC;
-            log_debug(LOG_USE_FILE_LINE, "Create thread time: %f", time_used);
-        #endif //DEBUG
-
             continue;
         }
 
@@ -193,7 +157,7 @@ void *__admin_thread(void *arg){
     pthread_exit(NULL);
 }
 
-int thrdpool_create(size_t max_thrd, thrd_pool_t **tpool){
+int thrdpool_create(size_t max_thrd, thrdpool_t **tpool){
     
     if(max_thrd > LIM_MAX_THRD){
         log_error(LOG_USE_FILE_LINE, "Too many threads: %d", max_thrd);
@@ -209,7 +173,7 @@ int thrdpool_create(size_t max_thrd, thrd_pool_t **tpool){
         return -1;
     }
     // Init thread pool
-    memset(*tpool, 0, sizeof(thrd_pool_t));
+    memset(*tpool, 0, sizeof(thrdpool_t));
 
     //set max threads
     (*tpool)->max_thrd = max_thrd;
@@ -245,16 +209,16 @@ int thrdpool_create(size_t max_thrd, thrd_pool_t **tpool){
     return 0;
 }
 
-int thrdpool_add_work(thrd_pool_work_t work, thrd_pool_t *tpool){
+int thrdpool_add_work(thrdpool_work_t work, thrdpool_t *tpool){
 
     //create new work
-    thrd_pool_work_t *new_work = malloc(sizeof(thrd_pool_work_t));
+    thrdpool_work_t *new_work = malloc(sizeof(thrdpool_work_t));
     if(!new_work){
         log_warn(LOG_USE_FILE_LINE, "Can't malloc: Caller=>%p", __builtin_return_address(0));
         return -1;
     }
 
-    memcpy(new_work, &work, sizeof(thrd_pool_work_t));
+    memcpy(new_work, &work, sizeof(thrdpool_work_t));
 
     //add work to thread pool
     pthread_mutex_lock(&tpool->lock);
@@ -272,7 +236,7 @@ int thrdpool_add_work(thrd_pool_work_t work, thrd_pool_t *tpool){
     return 0;
 }
 
-int thrdpool_exit(int flag, thrd_pool_t **tpool){
+int thrdpool_exit(int flag, thrdpool_t **tpool){
 
     pthread_t self_tid = pthread_self();
     int is_init_thrd = self_tid == (*tpool)->init_thrd ? 1 : 0;
@@ -296,7 +260,7 @@ int thrdpool_exit(int flag, thrd_pool_t **tpool){
         pthread_mutex_lock(&(*tpool)->lock);
         //clear work queue
         while((*tpool)->work_head){
-            thrd_pool_work_t *tmp = (*tpool)->work_head;
+            thrdpool_work_t *tmp = (*tpool)->work_head;
             (*tpool)->work_head = (*tpool)->work_head->next;
             free(tmp);
             (*tpool)->work_count--;

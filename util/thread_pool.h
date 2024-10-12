@@ -7,9 +7,9 @@ typedef struct thrdpool_work_t{
     void *arg;
     void (*func)(void *args);
     struct thrdpool_work_t *next;
-}thrd_pool_work_t;
+}thrdpool_work_t;
 
-typedef struct __thread_pool_t thrd_pool_t;
+typedef struct __thread_pool_t thrdpool_t;
 
 enum{THRDPOOL_EXIT_NONE,THRDPOOL_EXIT_WAIT};
 
@@ -23,7 +23,7 @@ tpool: pointer to thread pool, will be assigned after successful creation
 max_thrd: 线程池中最大线程数
 max_thrd: maximum number of threads in the thread pool
 */
-int thrdpool_create(size_t max_thrd, thrd_pool_t **tpool);
+int thrdpool_create(size_t max_thrd, thrdpool_t **tpool);
 
 
 /*
@@ -36,12 +36,12 @@ work: work item
 tpool: 指向线程池的指针
 tpool: pointer to thread pool
 */
-int thrdpool_add_work(thrd_pool_work_t work, thrd_pool_t *tpool);
+int thrdpool_add_work(thrdpool_work_t work, thrdpool_t *tpool);
 
 /*
 退出线程池
 exit thread pool
 */
-int thrdpool_exit(int flag, thrd_pool_t **tpool);
+int thrdpool_exit(int flag, thrdpool_t **tpool);
 
 #endif
