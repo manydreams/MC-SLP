@@ -54,19 +54,19 @@ static void stdout_callback(log_Event *ev) {
   buf[strftime(buf, sizeof(buf), "%H:%M:%S", ev->time)] = '\0';
 #ifdef LOG_USE_COLOR
   if(ev->flag == LOG_USE_FILE_LINE) fprintf(
-    ev->udata, "%s.%06d %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
+    ev->udata, "%s.%06ld %s%-5s\x1b[0m \x1b[90m%s:%d:\x1b[0m ",
     buf, ev->timev.tv_usec, level_colors[ev->level], level_strings[ev->level],
     ev->file, ev->line);
   else fprintf(
-    ev->udata, "%s.%06d %s%-5s\x1b[0m",
+    ev->udata, "%s.%06ld %s%-5s\x1b[0m",
     buf, ev->timev.tv_usec, level_colors[ev->level], level_strings[ev->level]);
 #else
   if(ev->flag == LOG_USE_FILE_LINE) fprintf(
-    ev->udata, "%s.%06d %-5s %s:%d: ",
+    ev->udata, "%s.%06ld %-5s %s:%d: ",
     buf, ev->timev.tv_usec, level_strings[ev->level], ev->file, ev->line);
   else fprintf(
-    ev->udata, "%s.%06d %-5s",
-    buf, ev->timev.tv_usec, level_strings[ev->level], ev->file, ev->line);
+    ev->udata, "%s.%06ld %-5s",
+    buf, ev->timev.tv_usec, level_strings[ev->level]);
 #endif
   vfprintf(ev->udata, ev->fmt, ev->ap);
   fprintf(ev->udata, "\n");
@@ -78,7 +78,7 @@ static void file_callback(log_Event *ev) {
   char buf[64];
   buf[strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", ev->time)] = '\0';
   fprintf(
-    ev->udata, "%s.%06d %-5s %s:%d: ",
+    ev->udata, "%s.%06ld %-5s %s:%d: ",
     buf, ev->timev.tv_usec, level_strings[ev->level], ev->file, ev->line);
   vfprintf(ev->udata, ev->fmt, ev->ap);
   fprintf(ev->udata, "\n");
