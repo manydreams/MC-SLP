@@ -7,12 +7,13 @@ VPATH = log:network:util
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g
+CFLAGS += -DDEBUG
 endif
 
 main: main.c libslp.a
 	$(CC) $(CFLAGS) $< -L. -lslp -o main
 
-libslp.a: log.o network.o packets.o thread_pool.o types.o
+libslp.a: log.o network.o packets.o thread_pool.o types.o yyjson.o config.o base64.o queue.o
 	ar rcs $@ $^
 
 .PHONY: clean run
