@@ -2,9 +2,7 @@
 #include<stdlib.h>
 #include<string.h>
 #include<getopt.h>
-#include<unistd.h>
-#include<time.h>
-#include<errno.h>
+#include<signal.h>
 #include<sys/socket.h>
 #include<arpa/inet.h>
 
@@ -24,8 +22,10 @@
 bool enable_all_protocols = true;
 pthread_mutex_t log_lock = PTHREAD_MUTEX_INITIALIZER;
 queue_t *cnnts;
-int sockfd;
 thrdpool_t *tpool;
+int sockfd;
+const char *def_motd = "a C language SLP server";
+const char *def_name = "MC SLP Server";
 config_t defcfg;
 
 void set_lock(bool lock, void *udata){
@@ -46,9 +46,10 @@ void get_stop(){
             log_fatal(LOG_USE_FILE_LINE, "Failed to read from stdin");
             continue;
         }
-        if(strcmp(buf, "stop\n") == 0){
-            exit(0);
+        if(strcmp(buf, "stop\n") != 0){            
+            continue;
         }
+        exit(0);
     }
 }
 
@@ -166,19 +167,16 @@ void handle_client(){
 
 int main(int argc, char const **argv){
     int ch;
+    memset(&defcfg, 0, sizeof(config_t));
 
     uint32_t address = INADDR_ANY;
     uint16_t port = 25565;
     int max_players = 200;
     int online_players = 40;
-    char *def_motd = "a C language SLP server";
-    defcfg.motd = def_motd;
-    char *def_name = "MC SLP Server";
-    defcfg.name = def_name;
+    defcfg.motd = (char*) def_motd;
+    defcfg.name = (char*) def_name;
     char *favicon = NULL;
     struct timeval timeout = {.tv_sec = 5,.tv_usec = 0};
-
-    log_set_lock(set_lock, &log_lock);
 
     while((ch = getopt(argc, (char *const *)argv, "a:p:M:O:m:n:i:h:")) != -1){
         switch(ch){
@@ -275,7 +273,6 @@ int main(int argc, char const **argv){
         struct sockaddr_in client_addr;
         socklen_t client_addr_len;
         int client_sockfd;
-
         
         client_sockfd = network_accept(sockfd, &client_addr, &client_addr_len);
         if(client_sockfd < 0){
@@ -292,8 +289,4 @@ int main(int argc, char const **argv){
             continue;
         }
     }
-
-    free(defcfg.motd);
-    free(defcfg.name);
-    return 0;
 }
