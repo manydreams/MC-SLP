@@ -11,7 +11,7 @@ int json2config(char *json, config_t *config){
     yyjson_doc *doc;
     yyjson_val *root, *tmp;
     yyjson_val *version, *players;
-    char *name, *motd, *favicon;
+    const char *name, *motd, *favicon;
     
     /*init json doc*/
     doc = yyjson_read(json, strlen(json), 0);
