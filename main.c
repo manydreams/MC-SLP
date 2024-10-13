@@ -12,6 +12,7 @@
 #include"util/thread_pool.h"
 #include"util/packets.h"
 #include"util/queue.h"
+#include"util/base64.h"
 #include"util/config.h"
 
 #ifdef DEBUG
@@ -41,7 +42,10 @@ void set_lock(bool lock, void *udata){
 void get_stop(){
     char buf[128];
     while(1){
-        fgets(buf, 128, stdin);
+        if(fgets(buf, 128, stdin) == NULL){
+            log_fatal(LOG_USE_FILE_LINE, "Failed to read from stdin");
+            continue;
+        }
         if(strcmp(buf, "stop\n") == 0){
             exit(0);
         }
@@ -167,39 +171,80 @@ int main(int argc, char const **argv){
     uint16_t port = 25565;
     int max_players = 200;
     int online_players = 40;
-    char *def_motd = "a C language SLP server"; 
+    char *def_motd = "a C language SLP server";
+    defcfg.motd = def_motd;
     char *def_name = "MC SLP Server";
-    char *def_favicon = NULL;
+    defcfg.name = def_name;
+    char *favicon = NULL;
     struct timeval timeout = {.tv_sec = 5,.tv_usec = 0};
 
     log_set_lock(set_lock, &log_lock);
 
-    while((ch = getopt(argc, (char *const *)argv, "a:O:M:m:p:i:n:h")) != -1){
+    while((ch = getopt(argc, (char *const *)argv, "a:p:M:O:m:n:i:h:")) != -1){
         switch(ch){
             case 'a':
+                pmsg("Setting address");
+                address = inet_addr(optarg);
                 break;
             case 'O':
+                pmsg("Setting online players");
+                online_players = atoi(optarg);
                 break;
             case 'M':
+                pmsg("Setting max players");
+                max_players = atoi(optarg);
                 break;
             case 'm':
+                pmsg("Setting motd");
+                defcfg.motd = optarg;
                 break;
             case 'p':
+                pmsg("Setting port");
+                port = (uint16_t)atoi(optarg);
                 break;
             case 'i':
+                pmsg("Setting favicon");
+                FILE *f = fopen(optarg, "rb");
+                if(f == NULL){
+                    log_fatal(LOG_USE_FILE_LINE, "Failed to open favicon file: %s", optarg);
+                    return 1;
+                }
+                fseek(f, 0, SEEK_END);
+                long size = ftell(f);
+                fseek(f, 0, SEEK_SET);
+                char *tmp_read = malloc(size);
+                if(tmp_read == NULL){
+                    log_fatal(LOG_USE_FILE_LINE, "Failed to allocate memory for favicon");
+                    return 1;
+                }
+                if(fread(tmp_read, 1, size, f) != size){
+                    log_fatal(LOG_USE_FILE_LINE, "Failed to read favicon file");
+                    return 1;
+                }
+                fclose(f);
+                int len;
+                if(base64_encode(tmp_read, size, &favicon, &len) < 0){
+                    log_fatal(LOG_USE_FILE_LINE, "Failed to encode favicon");
+                    return 1;
+                }
+                free(tmp_read);
                 break;
             case 'n':
+                pmsg("Setting name");
+                defcfg.name = optarg;
                 break;
             case 'h':
-                break;
+                printf("MC SLP Server\n");
+                printf("Usage: [-a address] [-p port] [-M max_players] [-O online_players] [-m motd] [-n name] [-i favicon_file] [-h help]\n");
+                return 0;
+            case '?':
             default:
+                log_fatal(LOG_USE_FILE_LINE, "Invalid option");
                 break;
         }
     }
 
-    defcfg.name = def_name;
-    defcfg.motd = def_motd;
-    defcfg.favicon = def_favicon;
+    defcfg.favicon = favicon;
     defcfg.max_players = max_players;
     defcfg.online_players = online_players;
 
@@ -246,8 +291,9 @@ int main(int argc, char const **argv){
             log_fatal(LOG_USE_FILE_LINE, "Failed to add work to thread pool");
             continue;
         }
-
     }
 
+    free(defcfg.motd);
+    free(defcfg.name);
     return 0;
 }
