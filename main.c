@@ -233,6 +233,8 @@ int main(int argc, char const **argv){
             case 'h':
                 printf("MC SLP Server\n");
                 printf("Usage: [-a address] [-p port] [-M max_players] [-O online_players] [-m motd] [-n name] [-i favicon_file] [-h help]\n");
+                printf("Default values: address=0.0.0.0, port=25565, max_players=200, online_players=40, motd=\"a C language SLP server\", name=\"MC SLP Server\", favicon=NULL\n");
+                printf("Press 'stop' to exit\n");
                 return 0;
             case '?':
             default:
