@@ -3,11 +3,6 @@
 
 #include "base64.h"
 
-#define get_code0(p) ((*p) >> 2)
-#define get_code1(p) ((((*p) & 0x3) << 4) | (*(p+1) >> 4))
-#define get_code2(p) (((*(p+1) & 0xf) << 2) | (*(p+2) >> 6))
-#define get_code3(p) (*(p+2) & 0x3f)
-
 char __base64_chars[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 int __base64_decode_table[] ={0,0,0,0,0,0,0,0,0,0,0,0,
     		 0,0,0,0,0,0,0,0,0,0,0,0,
@@ -26,7 +21,7 @@ int __base64_decode_table[] ={0,0,0,0,0,0,0,0,0,0,0,0,
 int base64_encode(char *input, const int input_len, char **output, int *output_len){
 
     int padding = 0;
-    char *pi = input;
+    unsigned char *pi = (unsigned char*)input;
     char *po;
 
 
@@ -45,24 +40,24 @@ int base64_encode(char *input, const int input_len, char **output, int *output_l
     for(int i = 0; i < input_len; i += 3){
     
         if(i + 3 >= input_len && padding == 1){
-            *po++ = __base64_chars[get_code0(pi)];
-            *po++ = __base64_chars[get_code1(pi)];
-            *po++ = __base64_chars[get_code2(pi)];
+            *po++ = __base64_chars[pi[0] >> 2];
+            *po++ = __base64_chars[(pi[0] & 0x3) << 4 | pi[1] >> 4];
+            *po++ = __base64_chars[(pi[1] & 0xf) << 2 | pi[2] >> 6];
             *po++ = '=';
             break;
         }
         if(i + 3 >= input_len && padding == 2){
-            *po++ = __base64_chars[get_code0(pi)];
-            *po++ = __base64_chars[get_code1(pi)];
+            *po++ = __base64_chars[pi[0] >> 2];
+            *po++ = __base64_chars[(pi[0] & 0x3) << 4 | pi[1] >> 4];
             *po++ = '=';
             *po++ = '=';
             break;
         }
 
-        *po++ = __base64_chars[get_code0(pi)];
-        *po++ = __base64_chars[get_code1(pi)];
-        *po++ = __base64_chars[get_code2(pi)];
-        *po++ = __base64_chars[get_code3(pi)];
+        *po++ = __base64_chars[pi[0] >> 2];
+        *po++ = __base64_chars[(pi[0] & 0x3) << 4 | pi[1] >> 4];
+        *po++ = __base64_chars[(pi[1] & 0xf) << 2 | pi[2] >> 6];
+        *po++ = __base64_chars[pi[2] & 0x3f];
 
         pi += 3;
     }

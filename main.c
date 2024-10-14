@@ -46,10 +46,9 @@ void get_stop(){
             log_fatal(LOG_USE_FILE_LINE, "Failed to read from stdin");
             continue;
         }
-        if(strcmp(buf, "stop\n") != 0){            
-            continue;
+        if(strcmp(buf, "stop\n") == 0){            
+            exit(0);;
         }
-        exit(0);
     }
 }
 
