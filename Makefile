@@ -11,7 +11,7 @@ CFLAGS += -DDEBUG
 endif
 
 main: main.c libslp.a
-	$(CC) $(CFLAGS) $< -L. -lslp -o main
+	$(CC) $(CFLAGS) $< -L. -lslp -o slp
 
 libslp.a: log.o network.o packets.o thread_pool.o types.o yyjson.o config.o base64.o queue.o
 	ar rcs $@ $^
