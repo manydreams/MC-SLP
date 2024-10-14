@@ -177,7 +177,7 @@ int main(int argc, char const **argv){
     char *favicon = NULL;
     struct timeval timeout = {.tv_sec = 5,.tv_usec = 0};
 
-    while((ch = getopt(argc, (char *const *)argv, "a:p:M:O:m:n:i:h:")) != -1){
+    while((ch = getopt(argc, (char *const *)argv, "a:p:M:O:m:n:i:h")) != -1){
         switch(ch){
             case 'a':
                 pmsg("Setting address");
@@ -237,7 +237,7 @@ int main(int argc, char const **argv){
             case '?':
             default:
                 log_fatal(LOG_USE_FILE_LINE, "Invalid option");
-                break;
+                return 1;
         }
     }
 
