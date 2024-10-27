@@ -20,6 +20,6 @@ libslp.a: log.o network.o packets.o thread_pool.o types.o yyjson.o config.o base
 clean:
 	@for file in $$(ls *.o); do rm $$file; done
 	if [ -e libslp.a ]; then rm libslp.a; fi
-	if [ -e main ]; then rm main; fi
+	if [ -e slp ]; then rm slp; fi
 run: main
 	./main
