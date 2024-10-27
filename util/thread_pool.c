@@ -33,12 +33,6 @@ struct __thread_pool_t{
     int admin_exit;
 };
 
-void __thrd_exit(int sig){
-    if(sig == SIGINT || sig == SIGTERM){
-        pthread_exit(NULL);
-    }
-}
-
 long __get_cur_ms(){          
    struct timeval tv;                      
    gettimeofday(&tv, NULL);                
